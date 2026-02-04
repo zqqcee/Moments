@@ -24,21 +24,21 @@ final class ThoughtListViewModel {
     var error: AppError?
     var selectedTag: String?
     var slideDirection: SlideDirection = .none
-
-    // 保存所有可用标签（不受过滤影响）
-    private var _allAvailableTags: [String] = []
+    var hasMore = true
 
     // MARK: - Pagination
 
     private var currentPage = 1
-    private var hasMore = true
-    private let pageSize = 10
+    private let pageSize = 20
+
+    // 保存所有可用标签（不受过滤影响）
+    private var _allAvailableTags: [String] = []
 
     // MARK: - Service
 
     private let service: ThoughtServiceProtocol
 
-    init(service: ThoughtServiceProtocol = MockThoughtService()) {
+    init(service: ThoughtServiceProtocol = ThoughtService()) {
         self.service = service
     }
 
@@ -50,14 +50,15 @@ final class ThoughtListViewModel {
 
         isLoading = true
         error = nil
+        currentPage = 1
 
         do {
-            let response = try await service.getThoughts(page: 1, pageSize: pageSize, tag: selectedTag)
+            let response = try await service.getThoughts(page: currentPage, pageSize: pageSize, tag: selectedTag)
+
             withAnimation(.easeOut(duration: 0.4)) {
-                thoughts = response.data
+                thoughts = response.items
             }
-            hasMore = response.pagination.hasMore
-            currentPage = 1
+            hasMore = response.hasMore
 
             // 只在未过滤时更新所有可用标签
             if selectedTag == nil {
@@ -73,26 +74,21 @@ final class ThoughtListViewModel {
     }
 
     @MainActor
-    func loadMore() async {
-        guard !isLoading, !isLoadingMore, hasMore else { return }
+    func loadMoreThoughts() async {
+        guard !isLoading && !isLoadingMore && hasMore else { return }
 
         isLoadingMore = true
+        currentPage += 1
 
         do {
-            let nextPage = currentPage + 1
-            let response = try await service.getThoughts(page: nextPage, pageSize: pageSize, tag: selectedTag)
+            let response = try await service.getThoughts(page: currentPage, pageSize: pageSize, tag: selectedTag)
 
-            thoughts.append(contentsOf: response.data)
-            hasMore = response.pagination.hasMore
-            currentPage = nextPage
-
-            // 只在未过滤时更新所有可用标签
-            if selectedTag == nil {
-                let newTags = Set(response.data.flatMap { $0.tags })
-                _allAvailableTags = Array(Set(_allAvailableTags).union(newTags)).sorted()
+            withAnimation(.easeOut(duration: 0.3)) {
+                thoughts.append(contentsOf: response.items)
             }
+            hasMore = response.hasMore
         } catch {
-            // 加载更多失败时静默处理
+            currentPage -= 1
         }
 
         isLoadingMore = false
@@ -168,9 +164,5 @@ final class ThoughtListViewModel {
 
     var isEmpty: Bool {
         thoughts.isEmpty && !isLoading
-    }
-
-    var canLoadMore: Bool {
-        !isLoading && !isLoadingMore && hasMore && !thoughts.isEmpty
     }
 }

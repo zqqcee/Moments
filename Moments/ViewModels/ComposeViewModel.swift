@@ -27,7 +27,7 @@ final class ComposeViewModel {
 
     private let service: ThoughtServiceProtocol
 
-    init(service: ThoughtServiceProtocol = MockThoughtService()) {
+    init(service: ThoughtServiceProtocol = ThoughtService()) {
         self.service = service
     }
 
@@ -77,7 +77,8 @@ final class ComposeViewModel {
                 } else if let uiImage = selected.image {
                     // 新图片，需要压缩并上传到 OSS
                     let compressed = ImageCompressor.compress(uiImage)
-                    print("[Publish] Compressed image - size: \(compressed.size), data: \(compressed.data.count) bytes")
+                    let blurhash = ImageCompressor.generateBlurhash(uiImage)
+                    print("[Publish] Compressed image - size: \(compressed.size), data: \(compressed.data.count) bytes, blurhash: \(blurhash ?? "nil")")
 
                     guard !compressed.data.isEmpty else {
                         print("[Publish] ERROR: Compressed data is empty!")
@@ -87,7 +88,8 @@ final class ComposeViewModel {
                     let thoughtImage = try await OSSService.shared.uploadImage(
                         compressed.data,
                         width: Int(compressed.size.width),
-                        height: Int(compressed.size.height)
+                        height: Int(compressed.size.height),
+                        blurhash: blurhash
                     )
                     images.append(thoughtImage)
                 }

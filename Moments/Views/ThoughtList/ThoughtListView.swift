@@ -81,14 +81,6 @@ struct ThoughtListView: View {
                                     }
                                 }
                             )
-                            .onAppear {
-                                // 触发加载更多
-                                if index == viewModel.thoughts.count - 3 && viewModel.canLoadMore {
-                                    Task {
-                                        await viewModel.loadMore()
-                                    }
-                                }
-                            }
                         }
                     }
                     .transition(.asymmetric(
@@ -98,18 +90,24 @@ struct ThoughtListView: View {
                     ))
                 }
 
+                // 底部加载触发器
+                if viewModel.hasMore {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                        .onAppear {
+                            Task {
+                                await viewModel.loadMoreThoughts()
+                            }
+                        }
+                }
+
                 // 切换标签时的加载指示器
                 if viewModel.thoughts.isEmpty && viewModel.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 60)
                         .transition(.opacity)
-                }
-
-                // 加载更多指示器
-                if viewModel.isLoadingMore {
-                    ProgressView()
-                        .padding(.vertical, 20)
                 }
 
                 // 底部占位

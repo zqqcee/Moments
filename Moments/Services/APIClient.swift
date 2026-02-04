@@ -11,12 +11,27 @@ actor APIClient {
     static let shared = APIClient()
 
     // TODO: 替换为真实的 API 地址
-    private let baseURL = "https://api.luckycc.cc"
+//    private let baseURL = "https://api.luckycc.cc"
+    private let baseURL = "http://localhost:1234"
     private var authToken: String?
 
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            // 兜底：不带毫秒的格式
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date: \(dateString)")
+        }
         return decoder
     }()
 

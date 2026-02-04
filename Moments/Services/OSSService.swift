@@ -29,8 +29,9 @@ actor OSSService {
     ///   - imageData: 图片数据
     ///   - width: 图片宽度
     ///   - height: 图片高度
+    ///   - blurhash: 图片的 blurhash 值
     /// - Returns: ThoughtImage 包含 OSS URL
-    func uploadImage(_ imageData: Data, width: Int, height: Int) async throws -> ThoughtImage {
+    func uploadImage(_ imageData: Data, width: Int, height: Int, blurhash: String? = nil) async throws -> ThoughtImage {
         let fileName = generateFileName()
         let objectKey = "\(uploadDir)/\(fileName)"
 
@@ -40,7 +41,7 @@ actor OSSService {
             url: url,
             width: width,
             height: height,
-            blurhash: nil
+            blurhash: blurhash
         )
     }
 
