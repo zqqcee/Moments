@@ -2,7 +2,7 @@
 //  ImageCompressor.swift
 //  Moments
 //
-//  图片压缩 (最大 1.5MB, 宽度 ≤1920)
+//  图片压缩 (最大 1.5MB, 宽度 ≤1920) & BlurHash 生成
 //
 
 import UIKit
@@ -75,5 +75,19 @@ enum ImageCompressor {
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }
+    }
+
+    // MARK: - BlurHash
+
+    /// 生成 blurhash（使用缩小的图片提高性能）
+    static func generateBlurhash(_ image: UIImage) -> String? {
+        // 缩小到 32x32 提高编码速度
+        let size = CGSize(width: 32, height: 32)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let smallImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+
+        return smallImage.blurHash(numberOfComponents: (4, 3))
     }
 }

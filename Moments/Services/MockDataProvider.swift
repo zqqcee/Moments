@@ -110,17 +110,19 @@ enum MockDataProvider {
         let startIndex = (page - 1) * pageSize
         let endIndex = min(startIndex + pageSize, allThoughts.count)
 
-        let data = startIndex < allThoughts.count
+        let items = startIndex < allThoughts.count
             ? Array(allThoughts[startIndex..<endIndex])
             : []
 
-        let pagination = Pagination(
-            page: page,
-            pageSize: pageSize,
-            total: allThoughts.count,
-            totalPages: Int(ceil(Double(allThoughts.count) / Double(pageSize)))
-        )
+        let totalPages = Int(ceil(Double(allThoughts.count) / Double(pageSize)))
 
-        return PaginatedResponse(data: data, pagination: pagination)
+        return PaginatedResponse(
+            items: items,
+            page: page,
+            limit: pageSize,
+            total: allThoughts.count,
+            totalPages: totalPages,
+            hasMore: page < totalPages
+        )
     }
 }

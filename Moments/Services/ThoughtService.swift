@@ -54,16 +54,17 @@ final class MockThoughtService: ThoughtServiceProtocol {
         let startIndex = (page - 1) * pageSize
         let endIndex = min(startIndex + pageSize, sorted.count)
 
-        let data = startIndex < sorted.count ? Array(sorted[startIndex..<endIndex]) : []
+        let items = startIndex < sorted.count ? Array(sorted[startIndex..<endIndex]) : []
+        let totalPages = max(1, Int(ceil(Double(sorted.count) / Double(pageSize))))
 
-        let pagination = Pagination(
+        return PaginatedResponse(
+            items: items,
             page: page,
-            pageSize: pageSize,
+            limit: pageSize,
             total: sorted.count,
-            totalPages: max(1, Int(ceil(Double(sorted.count) / Double(pageSize))))
+            totalPages: totalPages,
+            hasMore: page < totalPages
         )
-
-        return PaginatedResponse(data: data, pagination: pagination)
     }
 
     func getThought(id: String) async throws -> Thought {
@@ -132,14 +133,14 @@ final class ThoughtService: ThoughtServiceProtocol {
     func getThoughts(page: Int, pageSize: Int = 10, tag: String? = nil) async throws -> PaginatedResponse<Thought> {
         var queryItems = [
             URLQueryItem(name: "page", value: String(page)),
-            URLQueryItem(name: "pageSize", value: String(pageSize))
+            URLQueryItem(name: "limit", value: String(pageSize))
         ]
 
         if let tag = tag, !tag.isEmpty {
             queryItems.append(URLQueryItem(name: "tag", value: tag))
         }
 
-        let response: ThoughtListResponse = try await client.get("/thoughts", queryItems: queryItems)
+        let response: ThoughtListResponse = try await client.get("/moments", queryItems: queryItems)
 
         guard response.isSuccess, let data = response.data else {
             throw AppError.serverError(code: response.code, message: response.msg)
@@ -149,7 +150,7 @@ final class ThoughtService: ThoughtServiceProtocol {
     }
 
     func getThought(id: String) async throws -> Thought {
-        let response: ThoughtResponse = try await client.get("/thoughts/\(id)")
+        let response: ThoughtResponse = try await client.get("/moments/\(id)")
 
         guard response.isSuccess, let data = response.data else {
             throw AppError.serverError(code: response.code, message: response.msg)
@@ -159,7 +160,7 @@ final class ThoughtService: ThoughtServiceProtocol {
     }
 
     func createThought(_ request: CreateThoughtRequest) async throws -> Thought {
-        let response: ThoughtResponse = try await client.post("/thoughts", body: request)
+        let response: ThoughtResponse = try await client.post("/moments", body: request)
 
         guard response.isSuccess, let data = response.data else {
             throw AppError.serverError(code: response.code, message: response.msg)
@@ -169,7 +170,7 @@ final class ThoughtService: ThoughtServiceProtocol {
     }
 
     func updateThought(id: String, _ request: UpdateThoughtRequest) async throws -> Thought {
-        let response: ThoughtResponse = try await client.put("/thoughts/\(id)", body: request)
+        let response: ThoughtResponse = try await client.put("/moments/\(id)", body: request)
 
         guard response.isSuccess, let data = response.data else {
             throw AppError.serverError(code: response.code, message: response.msg)
@@ -179,7 +180,7 @@ final class ThoughtService: ThoughtServiceProtocol {
     }
 
     func deleteThought(id: String) async throws {
-        let response: EmptyResponse = try await client.delete("/thoughts/\(id)")
+        let response: EmptyResponse = try await client.delete("/moments/\(id)")
 
         guard response.isSuccess else {
             throw AppError.serverError(code: response.code, message: response.msg)

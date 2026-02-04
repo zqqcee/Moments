@@ -18,8 +18,18 @@ struct APIResponse<T: Codable>: Codable {
 }
 
 struct PaginatedResponse<T: Codable>: Codable {
-    let data: [T]
-    let pagination: Pagination
+    let items: [T]
+    let page: Int
+    let limit: Int
+    let total: Int
+    let totalPages: Int
+    let hasMore: Bool
+
+    // 兼容旧代码
+    var data: [T] { items }
+    var pagination: Pagination {
+        Pagination(page: page, pageSize: limit, total: total, totalPages: totalPages, hasMore: hasMore)
+    }
 }
 
 struct Pagination: Codable {
@@ -27,10 +37,7 @@ struct Pagination: Codable {
     let pageSize: Int
     let total: Int
     let totalPages: Int
-
-    var hasMore: Bool {
-        page < totalPages
-    }
+    let hasMore: Bool
 }
 
 // MARK: - Convenience Types
